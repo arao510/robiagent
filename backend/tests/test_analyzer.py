@@ -25,11 +25,14 @@ MOCK_CLAUDE_RESPONSE = {
 }
 
 
-def make_mock_anthropic_response(data: dict):
+def make_mock_openai_response(data: dict):
+    """Build a mock that matches OpenAI's response structure:
+    response.choices[0].message.content = json string
+    """
     mock_response = MagicMock()
+    mock_choice = MagicMock()
     mock_message = MagicMock()
     mock_message.content = json.dumps(data)
-    mock_choice = MagicMock()
     mock_choice.message = mock_message
     mock_response.choices = [mock_choice]
     return mock_response
@@ -38,7 +41,7 @@ def make_mock_anthropic_response(data: dict):
 class TestAnalyzeTicker:
     @patch("agent.analyzer.client")
     def test_returns_recommendation_on_valid_response(self, mock_client, bullish_metrics):
-        mock_client.messages.create.return_value = make_mock_anthropic_response(MOCK_CLAUDE_RESPONSE)
+        mock_client.chat.completions.create.return_value = make_mock_openai_response(MOCK_CLAUDE_RESPONSE)
         rec = analyze_ticker(bullish_metrics, score=82.0)
 
         assert rec is not None
@@ -48,7 +51,7 @@ class TestAnalyzeTicker:
 
     @patch("agent.analyzer.client")
     def test_target_pct_computed_correctly(self, mock_client, bullish_metrics):
-        mock_client.messages.create.return_value = make_mock_anthropic_response(MOCK_CLAUDE_RESPONSE)
+        mock_client.chat.completions.create.return_value = make_mock_openai_response(MOCK_CLAUDE_RESPONSE)
         rec = analyze_ticker(bullish_metrics, score=82.0)
 
         expected_pct = round(((208.00 - 195.50) / 195.50) * 100, 2)
@@ -56,36 +59,38 @@ class TestAnalyzeTicker:
 
     @patch("agent.analyzer.client")
     def test_stop_loss_pct_is_negative(self, mock_client, bullish_metrics):
-        mock_client.messages.create.return_value = make_mock_anthropic_response(MOCK_CLAUDE_RESPONSE)
+        mock_client.chat.completions.create.return_value = make_mock_openai_response(MOCK_CLAUDE_RESPONSE)
         rec = analyze_ticker(bullish_metrics, score=82.0)
         assert rec.stop_loss_pct < 0
 
     @patch("agent.analyzer.client")
     def test_robinhood_steps_have_5_items(self, mock_client, bullish_metrics):
-        mock_client.messages.create.return_value = make_mock_anthropic_response(MOCK_CLAUDE_RESPONSE)
+        mock_client.chat.completions.create.return_value = make_mock_openai_response(MOCK_CLAUDE_RESPONSE)
         rec = analyze_ticker(bullish_metrics, score=82.0)
         assert len(rec.robinhood_steps) == 5
 
     @patch("agent.analyzer.client")
     def test_steps_are_ordered_correctly(self, mock_client, bullish_metrics):
-        mock_client.messages.create.return_value = make_mock_anthropic_response(MOCK_CLAUDE_RESPONSE)
+        mock_client.chat.completions.create.return_value = make_mock_openai_response(MOCK_CLAUDE_RESPONSE)
         rec = analyze_ticker(bullish_metrics, score=82.0)
         step_numbers = [s.step for s in rec.robinhood_steps]
         assert step_numbers == [1, 2, 3, 4, 5]
 
     @patch("agent.analyzer.client")
     def test_returns_none_on_api_error(self, mock_client, bullish_metrics):
-        mock_client.messages.create.side_effect = Exception("API timeout")
+        mock_client.chat.completions.create.side_effect = Exception("API timeout")
         rec = analyze_ticker(bullish_metrics, score=82.0)
         assert rec is None
 
     @patch("agent.analyzer.client")
     def test_handles_malformed_json_gracefully(self, mock_client, bullish_metrics):
-        bad_response = MagicMock()
-        bad_content = MagicMock()
-        bad_content.text = "This is not JSON at all"
-        bad_response.content = [bad_content]
-        mock_client.messages.create.return_value = bad_response
+        mock_response = MagicMock()
+        mock_choice = MagicMock()
+        mock_message = MagicMock()
+        mock_message.content = "This is not JSON at all"
+        mock_choice.message = mock_message
+        mock_response.choices = [mock_choice]
+        mock_client.chat.completions.create.return_value = mock_response
 
         rec = analyze_ticker(bullish_metrics, score=82.0)
         assert rec is None
