@@ -27,9 +27,11 @@ MOCK_CLAUDE_RESPONSE = {
 
 def make_mock_anthropic_response(data: dict):
     mock_response = MagicMock()
-    mock_content = MagicMock()
-    mock_content.text = json.dumps(data)
-    mock_response.content = [mock_content]
+    mock_message = MagicMock()
+    mock_message.content = json.dumps(data)
+    mock_choice = MagicMock()
+    mock_choice.message = mock_message
+    mock_response.choices = [mock_choice]
     return mock_response
 
 
