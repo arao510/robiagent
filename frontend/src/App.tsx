@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { TrendingUp, TrendingDown, Minus, RefreshCw, BarChart3, Clock, AlertTriangle, ChevronDown, ChevronUp, Target, ShieldAlert, Zap } from 'lucide-react'
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, BarChart, Bar } from 'recharts'
-import { useLatestDigest, usePerformance, useDigestHistory, triggerRun } from './hooks/useApi'
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, BarChart, Bar } from 'recharts'
+import { useLatestDigest, usePerformance, triggerRun } from './hooks/useApi'
 import type { TradeRecommendation, PerformanceRecord, SignalType, ConfidenceLevel } from './types'
 
 // ─── Color utils ────────────────────────────────────────────────────────────
